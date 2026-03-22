@@ -12,6 +12,7 @@ builds:
       - arm64
     goos:
       - linux
+    main: ./cmd/synced-hostpath
 
 dockers:
   - build_flag_templates:
