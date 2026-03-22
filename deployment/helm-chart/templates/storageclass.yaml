@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: synced-hostpath
+allowVolumeExpansion: false
+provisioner: {{ .Values.driver.name }}
+reclaimPolicy: Delete
+volumeBindingMode: Immediate

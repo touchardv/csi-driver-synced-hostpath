@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-synced-hostpath-controller
+  namespace: kube-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: csi-synced-hostpath-controller
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: csi-synced-hostpath-controller
+    spec:
+      containers:
+        - args:
+            - -v=2
+            - --csi-address=$(ADDRESS)
+            - --leader-election=false
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          image: registry.k8s.io/sig-storage/csi-provisioner:v6.0.0
+          imagePullPolicy: IfNotPresent
+          name: csi-provisioner
+          resources:
+            limits:
+              memory: 400Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+
+        - args:
+            - --csi-address=/csi/csi.sock
+            - --probe-timeout=3s
+            - --http-endpoint=localhost:29642
+            - --v=2
+          image: registry.k8s.io/sig-storage/livenessprobe:v2.17.0
+          imagePullPolicy: IfNotPresent
+          name: liveness-probe
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+
+        - args:
+            - -v={{ .Values.logLevel }}
+            - --socket-path=$(CSI_ENDPOINT)
+            - --state-dir=/state
+            - --enable-file-server=true
+          env:
+            - name: CSI_ENDPOINT
+              value: /csi/csi.sock
+          image: {{ .Values.pod.image }}
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              host: localhost
+              path: /healthz
+              port: 29642
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 10
+          name: csi-controller
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /state
+              name: state-dir
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: {{ .Values.serviceAccountName }}
+      serviceAccountName: {{ .Values.serviceAccountName }}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/controlplane
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+        - effect: NoSchedule
+          key: CriticalAddonsOnly
+          operator: Exists
+      volumes:
+        - emptyDir: {}
+          name: socket-dir
+        - name: state-dir
+          persistentVolumeClaim:
+            claimName: {{ .Values.state.claimName }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: csi-driver-synced-hostpath
+type: application
+version: "0.0.1"
+description: Synced hostpath CSI Driver for Kubernetes
+appVersion: "0.0.1"

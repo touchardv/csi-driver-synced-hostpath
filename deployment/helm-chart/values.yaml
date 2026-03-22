@@ -1,0 +1,10 @@
+driver:
+  name: syncedhostpath.csi.k8s.io
+logLevel: 4
+pod:
+  image: quay.io/touchardv/csi-synced-hostpath-driver:latest
+serviceAccountName: csi-synced-hostpath-controller-sa
+state:
+  claimName: csi-synced-hostpath
+  storageSize: 10Gi
+  storageClassName: hostpath
