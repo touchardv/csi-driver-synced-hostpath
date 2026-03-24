@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: csi-synced-hostpath-fileserver
+  name: {{ .Values.fileServer.service.name }}
   namespace: kube-system
 spec:
   ports:
     - name: grpc
-      port: 50051
+      port: {{ .Values.fileServer.service.port }}
       protocol: TCP
   selector:
     app: csi-synced-hostpath-controller

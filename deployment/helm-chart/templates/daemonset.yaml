@@ -17,7 +17,7 @@ spec:
         - args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
-            - --http-endpoint=localhost:29643
+            - --http-endpoint=localhost:{{ .Values.node.livenessProbe.port }}
             - --v=2
           image: registry.k8s.io/sig-storage/livenessprobe:v2.17.0
           imagePullPolicy: IfNotPresent
@@ -74,6 +74,7 @@ spec:
             - --socket-path=$(CSI_ENDPOINT)
             - --state-dir=/state
             - --nodeid=$(KUBE_NODE_NAME)
+            - --file-server-addr={{ .Values.fileServer.service.name }}:{{ .Values.fileServer.service.port }}
           env:
             - name: CSI_ENDPOINT
               value: /csi/csi.sock
@@ -89,7 +90,7 @@ spec:
             httpGet:
               host: localhost
               path: /healthz
-              port: 29643
+              port: {{ .Values.node.livenessProbe.port }}
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 30

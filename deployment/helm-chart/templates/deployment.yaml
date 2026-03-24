@@ -48,7 +48,7 @@ spec:
         - args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
-            - --http-endpoint=localhost:29642
+            - --http-endpoint=localhost:{{ .Values.controller.livenessProbe.port }}
             - --v=2
           image: registry.k8s.io/sig-storage/livenessprobe:v2.17.0
           imagePullPolicy: IfNotPresent
@@ -85,7 +85,7 @@ spec:
             httpGet:
               host: localhost
               path: /healthz
-              port: 29642
+              port: {{ .Values.controller.livenessProbe.port }}
               scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 30

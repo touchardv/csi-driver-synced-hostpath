@@ -13,6 +13,22 @@ In a shell, execute: `make` (or `make build`).
 
 The build artifacts can be cleaned by using: `make clean`.
 
+## Installing
+
+### Development version
+
+```
+git clone https://github.com/touchardv/csi-driver-synced-hostpath.git
+cd csi-driver-synced-hostpath
+make build package install
+```
+
+### Release version
+
+```
+helm install csi-driver-synced-hostpath oci://quay.io/touchardv/charts/csi-driver-synced-hostpath --version 0.0.1
+```
+
 ## TODOs
 
 * File client/server authentication
