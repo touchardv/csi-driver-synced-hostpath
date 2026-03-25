@@ -14,7 +14,7 @@ import (
 
 const (
 	DriverName    = "syncedhostpath.csi.k8s.io"
-	VendorVersion = "v0.0.1"
+	VendorVersion = "v0.0.2"
 )
 
 // SyncedHostPathDriver implements the three required CSI services.

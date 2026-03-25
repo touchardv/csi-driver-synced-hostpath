@@ -26,7 +26,7 @@ make build package install
 ### Release version
 
 ```
-helm install csi-driver-synced-hostpath oci://quay.io/touchardv/charts/csi-driver-synced-hostpath --version 0.0.1
+helm install csi-driver-synced-hostpath oci://quay.io/touchardv/charts/csi-driver-synced-hostpath --version 0.0.2
 ```
 
 ## TODOs
