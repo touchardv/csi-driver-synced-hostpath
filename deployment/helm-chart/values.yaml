@@ -12,7 +12,7 @@ node:
   livenessProbe:
     port: 27302
 pod:
-  image: quay.io/touchardv/csi-driver-synced-hostpath:v0.0.2
+  image: quay.io/touchardv/csi-driver-synced-hostpath:v0.0.3
 serviceAccountName: csi-synced-hostpath-controller-sa
 state:
   claimName: csi-synced-hostpath
