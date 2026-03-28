@@ -1,7 +1,7 @@
 BINARY := csi-driver-synced-hostpath
 BUILD_DIR := $(shell pwd)/build
 CHART_NAME := $(shell grep 'name:' deployment/helm-chart/Chart.yaml | awk '{print $$2}')
-CHART_VERSION := $(shell grep 'version:' deployment/helm-chart/Chart.yaml | awk '{print $$2}')
+CHART_VERSION := $(shell grep 'version:' deployment/helm-chart/Chart.yaml | awk '{print $$2}' | tr -d \")
 IMAGE := quay.io/touchardv/csi-synced-hostpath-driver
 GENERATED_SOURCES := internal/synced/file.pb.go internal/synced/file_grpc.pb.go
 GOARCH := $(shell go env GOARCH)
@@ -61,6 +61,10 @@ package-image: $(BINARY)-linux-$(GOARCH)
 	docker buildx build --progress plain \
 		--platform $(DOCKER_BUILDX_PLATFORM) \
 		--tag $(IMAGE):$(TAG) --load -f deployment/Dockerfile .
+
+.PHONY:
+template: $(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz
+	helm template $(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz
 
 .PHONY: test
 test: $(GENERATED_SOURCES)

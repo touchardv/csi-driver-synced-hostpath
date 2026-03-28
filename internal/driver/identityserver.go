@@ -35,6 +35,6 @@ func (n *SyncedHostPathDriver) GetPluginCapabilities(_ context.Context, _ *csi.G
 
 // Probe returns a response indicating if the plugin is ready.
 func (n *SyncedHostPathDriver) Probe(_ context.Context, _ *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	klog.V(2).Info("Identity: Probe called")
+	klog.V(4).Info("Identity: Probe called")
 	return &csi.ProbeResponse{Ready: &wrapperspb.BoolValue{Value: true}}, nil
 }

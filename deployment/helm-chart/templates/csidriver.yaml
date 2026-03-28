@@ -4,6 +4,7 @@ metadata:
   name: {{ .Values.driver.name }}
 spec:
   attachRequired: false
+  fsGroupPolicy: File
   podInfoOnMount: false
   volumeLifecycleModes:
     - Persistent
