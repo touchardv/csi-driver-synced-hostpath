@@ -97,7 +97,7 @@ func (s *fileServer) Upload(stream FileService_UploadServer) error {
 
 	var file *os.File
 	var volumeID string
-	var fileSize uint32
+	var fileSize uint64
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
@@ -135,7 +135,7 @@ func (s *fileServer) Upload(stream FileService_UploadServer) error {
 			if err != nil {
 				return status.Errorf(codes.Internal, "Write error: %v", err)
 			}
-			fileSize += uint32(n)
+			fileSize += uint64(n)
 		}
 	}
 }

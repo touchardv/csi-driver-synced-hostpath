@@ -25,5 +25,5 @@ message UploadRequest {
 
 message UploadResponse {
 string message = 1;
-  uint32 size_bytes = 2;
+  uint64 size_bytes = 2;
 }

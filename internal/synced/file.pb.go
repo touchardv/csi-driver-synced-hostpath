@@ -194,7 +194,7 @@ func (*UploadRequest_Chunk) isUploadRequest_Data() {}
 type UploadResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	SizeBytes     uint32                 `protobuf:"varint,2,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	SizeBytes     uint64                 `protobuf:"varint,2,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -236,7 +236,7 @@ func (x *UploadResponse) GetMessage() string {
 	return ""
 }
 
-func (x *UploadResponse) GetSizeBytes() uint32 {
+func (x *UploadResponse) GetSizeBytes() uint64 {
 	if x != nil {
 		return x.SizeBytes
 	}
@@ -260,7 +260,7 @@ const file_proto_file_proto_rawDesc = "" +
 	"\x0eUploadResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x1d\n" +
 	"\n" +
-	"size_bytes\x18\x02 \x01(\rR\tsizeBytes2\x99\x01\n" +
+	"size_bytes\x18\x02 \x01(\x04R\tsizeBytes2\x99\x01\n" +
 	"\vFileService\x12G\n" +
 	"\bDownload\x12\x1b.fileserver.DownloadRequest\x1a\x1c.fileserver.DownloadResponse0\x01\x12A\n" +
 	"\x06Upload\x12\x19.fileserver.UploadRequest\x1a\x1a.fileserver.UploadResponse(\x01B\n" +
