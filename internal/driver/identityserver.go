@@ -10,7 +10,7 @@ import (
 
 // GetPluginInfo return the version and name of the plugin
 func (n *SyncedHostPathDriver) GetPluginInfo(_ context.Context, _ *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	klog.V(2).Info("Identity: GetPluginInfo called")
+	klog.V(4).Info("Identity: GetPluginInfo called")
 	return &csi.GetPluginInfoResponse{
 		Name:          DriverName,
 		VendorVersion: VendorVersion,
@@ -19,7 +19,7 @@ func (n *SyncedHostPathDriver) GetPluginInfo(_ context.Context, _ *csi.GetPlugin
 
 // GetPluginCapabilities returns the capabilities of the plugin
 func (n *SyncedHostPathDriver) GetPluginCapabilities(_ context.Context, _ *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
-	klog.V(2).Info("Identity: GetPluginCapabilities called")
+	klog.V(4).Info("Identity: GetPluginCapabilities called")
 	return &csi.GetPluginCapabilitiesResponse{
 		Capabilities: []*csi.PluginCapability{
 			{

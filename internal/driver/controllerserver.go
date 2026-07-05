@@ -11,7 +11,7 @@ import (
 )
 
 func (n *SyncedHostPathDriver) ControllerGetCapabilities(ctx context.Context, req *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
-	klog.V(2).Info("Controller: GetCapabilities called")
+	klog.V(4).Info("Controller: GetCapabilities called")
 	return &csi.ControllerGetCapabilitiesResponse{
 		Capabilities: []*csi.ControllerServiceCapability{
 			{
@@ -26,7 +26,7 @@ func (n *SyncedHostPathDriver) ControllerGetCapabilities(ctx context.Context, re
 }
 
 func (n *SyncedHostPathDriver) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	klog.V(2).Info("Controller: CreateVolume called")
+	klog.V(4).Info("Controller: CreateVolume called")
 	if req.GetVolumeContentSource() != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported volume content source")
 	}
@@ -88,7 +88,7 @@ func (n *SyncedHostPathDriver) CreateVolume(ctx context.Context, req *csi.Create
 }
 
 func (n *SyncedHostPathDriver) DeleteVolume(_ context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
-	klog.V(2).Info("Controller: DeleteVolume called")
+	klog.V(4).Info("Controller: DeleteVolume called")
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "missing volume id")
@@ -107,7 +107,7 @@ func (n *SyncedHostPathDriver) DeleteVolume(_ context.Context, req *csi.DeleteVo
 
 // ValidateVolumeCapabilities implements csi.ControllerServer.
 func (n *SyncedHostPathDriver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
-	klog.V(2).Info("Controller: ValidateVolumeCapabilities called")
+	klog.V(4).Info("Controller: ValidateVolumeCapabilities called")
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "missing volume id")

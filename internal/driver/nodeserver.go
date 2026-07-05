@@ -10,7 +10,7 @@ import (
 )
 
 func (n *SyncedHostPathDriver) NodeGetCapabilities(_ context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
-	klog.V(2).Info("Node: GetCapabilities called")
+	klog.V(4).Info("Node: GetCapabilities called")
 	caps := []*csi.NodeServiceCapability{
 		{
 			Type: &csi.NodeServiceCapability_Rpc{
@@ -32,14 +32,14 @@ func (n *SyncedHostPathDriver) NodeGetCapabilities(_ context.Context, req *csi.N
 }
 
 func (n *SyncedHostPathDriver) NodeGetInfo(_ context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-	klog.V(2).Info("Node: GetInfo called")
+	klog.V(4).Info("Node: GetInfo called")
 	return &csi.NodeGetInfoResponse{
 		NodeId: n.nodeID,
 	}, nil
 }
 
 func (n *SyncedHostPathDriver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
-	klog.V(2).Info("Node: StageVolume called")
+	klog.V(4).Info("Node: StageVolume called")
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "missing volume id")
@@ -73,7 +73,7 @@ func (n *SyncedHostPathDriver) NodeStageVolume(ctx context.Context, req *csi.Nod
 }
 
 func (n *SyncedHostPathDriver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	klog.V(2).Info("Node: PublishVolume called")
+	klog.V(4).Info("Node: PublishVolume called")
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "missing volume id")
@@ -110,7 +110,7 @@ func (n *SyncedHostPathDriver) NodePublishVolume(ctx context.Context, req *csi.N
 }
 
 func (n *SyncedHostPathDriver) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
-	klog.V(2).Info("Node: UnpublishVolume called")
+	klog.V(4).Info("Node: UnpublishVolume called")
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "missing volume id")
@@ -139,7 +139,7 @@ func (n *SyncedHostPathDriver) NodeUnpublishVolume(_ context.Context, req *csi.N
 }
 
 func (n *SyncedHostPathDriver) NodeUnstageVolume(_ context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
-	klog.V(2).Info("Node: UnstageVolume called")
+	klog.V(4).Info("Node: UnstageVolume called")
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "missing volume id")
