@@ -1,14 +1,15 @@
 BINARY := csi-driver-synced-hostpath
 BUILD_DIR := $(shell pwd)/build
 CHART_NAME := $(shell grep 'name:' deployment/helm-chart/Chart.yaml | awk '{print $$2}')
-CHART_VERSION := $(shell grep 'version:' deployment/helm-chart/Chart.yaml | awk '{print $$2}' | tr -d \")
-IMAGE := quay.io/touchardv/csi-synced-hostpath-driver
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.1")
+SEMVER := $(shell echo $(VERSION) | sed 's/^v//')
 LD_ARGS ?= -ldflags "-X github.com/touchardv/csi-driver-synced-hostpath/internal/driver.VendorVersion=$(VERSION)"
+IMAGE := quay.io/touchardv/csi-driver-synced-hostpath
 GENERATED_SOURCES := internal/synced/file.pb.go internal/synced/file_grpc.pb.go
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
+HELM_SOURCES := $(shell find deployment/helm-chart -type f 2>/dev/null)
 SOURCES := $(shell find . -name '*.go')
-TAG := latest
 TARGET ?= $(shell uname -m)
 
 ifeq ($(GOARCH), arm64)
@@ -28,8 +29,8 @@ $(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(GENERATED_SOURCES) $(SOURCES)
 	go mod tidy
 	go build $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY) ./cmd/synced-hostpath
 
-$(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz:
-	helm package deployment/helm-chart -d $(BUILD_DIR)
+$(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz: $(HELM_SOURCES)
+	helm package deployment/helm-chart -d $(BUILD_DIR) --version $(SEMVER) --app-version $(SEMVER)
 
 $(BINARY)-linux-$(GOARCH): $(BUILD_DIR) $(GENERATED_SOURCES) $(SOURCES)
 	go mod tidy
@@ -42,8 +43,8 @@ clean:
 	go clean
 
 .PHONY: install
-install: $(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz
-	helm upgrade dev-csi-synced-hostpath $(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz --install
+install: $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz
+	helm upgrade dev-csi-synced-hostpath $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz --install
 
 internal/synced/file.pb.go: proto/file.proto
 	protoc --go_out=internal proto/file.proto
@@ -55,17 +56,17 @@ internal/synced/file_grpc.pb.go: proto/file.proto
 package: package-helm-chart package-image
 
 .PHONY: package-helm-chart
-package-helm-chart: $(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz
+package-helm-chart: $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz
 
 .PHONY: package-image
 package-image: $(BINARY)-linux-$(GOARCH)
 	docker buildx build --progress plain \
 		--platform $(DOCKER_BUILDX_PLATFORM) \
-		--tag $(IMAGE):$(TAG) --load -f deployment/Dockerfile .
+		--tag $(IMAGE):v$(SEMVER) --load -f deployment/Dockerfile .
 
-.PHONY:
-template: $(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz
-	helm template $(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz
+.PHONY: template
+template: $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz
+	helm template $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz
 
 .PHONY: test
 test: $(GENERATED_SOURCES)
