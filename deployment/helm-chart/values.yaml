@@ -7,7 +7,7 @@ fileServer:
   service:
     name: csi-synced-hostpath-fileserver
     port: 50051
-logLevel: 4
+logLevel: 2
 node:
   livenessProbe:
     port: 27302
