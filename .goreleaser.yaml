@@ -13,6 +13,8 @@ builds:
     goos:
       - linux
     main: ./cmd/synced-hostpath
+    ldflags:
+      - -X github.com/touchardv/csi-driver-synced-hostpath/internal/driver.VendorVersion=v{{.Version}}
 
 dockers:
   - build_flag_templates:

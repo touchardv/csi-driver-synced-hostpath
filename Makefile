@@ -3,6 +3,7 @@ BUILD_DIR := $(shell pwd)/build
 CHART_NAME := $(shell grep 'name:' deployment/helm-chart/Chart.yaml | awk '{print $$2}')
 CHART_VERSION := $(shell grep 'version:' deployment/helm-chart/Chart.yaml | awk '{print $$2}' | tr -d \")
 IMAGE := quay.io/touchardv/csi-synced-hostpath-driver
+LD_ARGS ?= -ldflags "-X github.com/touchardv/csi-driver-synced-hostpath/internal/driver.VendorVersion=$(VERSION)"
 GENERATED_SOURCES := internal/synced/file.pb.go internal/synced/file_grpc.pb.go
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
@@ -32,7 +33,7 @@ $(BUILD_DIR)/$(CHART_NAME)-$(CHART_VERSION).tgz:
 
 $(BINARY)-linux-$(GOARCH): $(BUILD_DIR) $(GENERATED_SOURCES) $(SOURCES)
 	go mod tidy
-	GOOS=linux GOARCH=$(GOARCH) go build -o $(BUILD_DIR)/$(BINARY)-linux-$(GOARCH) ./cmd/synced-hostpath
+	GOOS=linux GOARCH=$(GOARCH) go build $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY)-linux-$(GOARCH) ./cmd/synced-hostpath
 
 .PHONY: clean
 clean:
