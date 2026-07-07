@@ -52,6 +52,9 @@ internal/synced/file.pb.go: proto/file.proto
 internal/synced/file_grpc.pb.go: proto/file.proto
 	protoc --go-grpc_out=internal proto/file.proto
 
+.PHONY: generate-sources
+generate-sources: $(GENERATED_SOURCES)
+
 .PHONY: package
 package: package-helm-chart package-image
 
@@ -63,6 +66,10 @@ package-image: $(BINARY)-linux-$(GOARCH)
 	docker buildx build --progress plain \
 		--platform $(DOCKER_BUILDX_PLATFORM) \
 		--tag $(IMAGE):v$(SEMVER) --load -f deployment/Dockerfile .
+
+.PHONY: push-helm-chart
+push-helm-chart: $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz
+	helm push $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz oci://quay.io/touchardv/charts
 
 .PHONY: template
 template: $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz

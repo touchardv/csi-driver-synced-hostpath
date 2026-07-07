@@ -5,6 +5,7 @@ version: 2
 before:
   hooks:
     - go mod tidy
+    - make generate-sources
 
 builds:
   - goarch:
@@ -14,7 +15,7 @@ builds:
       - linux
     main: ./cmd/synced-hostpath
     ldflags:
-      - -X github.com/touchardv/csi-driver-synced-hostpath/internal/driver.VendorVersion=v{{.Version}}
+      - -s -w -X github.com/touchardv/csi-driver-synced-hostpath/internal/driver.VendorVersion=v{{.Version}}
 
 dockers:
   - build_flag_templates:
