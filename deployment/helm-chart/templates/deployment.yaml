@@ -78,7 +78,7 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: /csi/csi.sock
-          image: {{ .Values.pod.image }}
+          image: {{ .Values.pod.image }}:v{{ .Chart.AppVersion }}
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 5
