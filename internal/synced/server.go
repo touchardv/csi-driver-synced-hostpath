@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"time"
 
 	"google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -63,19 +64,22 @@ func (s *fileServer) Stop() {
 }
 
 func (s *fileServer) Download(req *DownloadRequest, stream FileService_DownloadServer) error {
-	klog.V(4).Info("FileServer: Download called")
+	klog.V(2).Infof("FileServer: Download starting for volume %s", req.VolumeID)
+	startTime := time.Now()
 	path, err := s.handler.Resolve(req.VolumeID)
 	if err != nil {
+		klog.Warningf("FileServer: Failed to resolve volume %s. Duration: %s, Error: %v", req.VolumeID, time.Since(startTime), err)
 		return err
 	}
 	file, err := os.Open(path)
 	if err != nil {
-		klog.Warningf("failed to serve file=%s", path)
+		klog.Warningf("FileServer: Failed to open file=%s for volume %s. Duration: %s, Error: %v", path, req.VolumeID, time.Since(startTime), err)
 		return err
 	}
 	defer file.Close()
 
 	klog.V(4).Infof("Downloading from file=%s", path)
+	var bytesSent int64
 	buf := make([]byte, 64*1024)
 	for {
 		n, err := file.Read(buf)
@@ -83,17 +87,23 @@ func (s *fileServer) Download(req *DownloadRequest, stream FileService_DownloadS
 			break
 		}
 		if err != nil {
+			klog.Warningf("FileServer: Failed to read file for volume %s. Duration: %s, Error: %v", req.VolumeID, time.Since(startTime), err)
 			return err
 		}
 		if err := stream.Send(&DownloadResponse{Chunk: buf[:n]}); err != nil {
+			klog.Warningf("FileServer: Failed to send chunk for volume %s. Duration: %s, Error: %v", req.VolumeID, time.Since(startTime), err)
 			return err
 		}
+		bytesSent += int64(n)
 	}
+	duration := time.Since(startTime)
+	klog.V(2).Infof("FileServer: Downloaded volume %s successfully. Size: %d bytes, Duration: %s", req.VolumeID, bytesSent, duration)
 	return nil
 }
 
 func (s *fileServer) Upload(stream FileService_UploadServer) error {
-	klog.V(4).Info("FileServer: Upload called")
+	klog.V(2).Info("FileServer: Upload starting")
+	startTime := time.Now()
 
 	var file *os.File
 	var volumeID string
@@ -103,37 +113,51 @@ func (s *fileServer) Upload(stream FileService_UploadServer) error {
 		if err == io.EOF {
 			if file != nil {
 				file.Close()
-				s.handler.Save(volumeID, file.Name())
+				if err := s.handler.Save(volumeID, file.Name()); err != nil {
+					klog.Warningf("FileServer: Failed to save uploaded volume %s. Duration: %s, Error: %v", volumeID, time.Since(startTime), err)
+					return err
+				}
 			}
+			duration := time.Since(startTime)
+			klog.V(2).Infof("FileServer: Uploaded volume %s successfully. Size: %d bytes, Duration: %s", volumeID, fileSize, duration)
 			return stream.SendAndClose(&UploadResponse{
 				Message:   fmt.Sprintf("Saved %s", volumeID),
 				SizeBytes: fileSize,
 			})
 		}
 		if err != nil {
+			klog.Warningf("FileServer: Failed to receive upload stream. Volume: %s, Duration: %s, Error: %v", volumeID, time.Since(startTime), err)
 			return err
 		}
 
 		switch data := req.Data.(type) {
 		case *UploadRequest_VolumeID:
 			if volumeID != "" {
-				return status.Error(codes.InvalidArgument, "Volume ID already received")
+				err = status.Error(codes.InvalidArgument, "Volume ID already received")
+				klog.Warningf("FileServer: Invalid upload request. Duration: %s, Error: %v", time.Since(startTime), err)
+				return err
 			}
 			volumeID = req.GetVolumeID()
 			file, err = os.CreateTemp(s.tempDir, "upload-")
 			if err != nil {
-				return status.Errorf(codes.Internal, "Cannot create temporary file: %v", err)
+				err = status.Errorf(codes.Internal, "Cannot create temporary file: %v", err)
+				klog.Warningf("FileServer: Failed to create temp file for volume %s. Duration: %s, Error: %v", volumeID, time.Since(startTime), err)
+				return err
 			}
 			defer os.Remove(file.Name())
 			klog.V(4).Infof("Uploading to file=%s", file.Name())
 
 		case *UploadRequest_Chunk:
 			if file == nil {
-				return status.Error(codes.FailedPrecondition, "Volume ID must be sent first")
+				err = status.Error(codes.FailedPrecondition, "Volume ID must be sent first")
+				klog.Warningf("FileServer: Invalid chunk received before volume ID. Duration: %s, Error: %v", time.Since(startTime), err)
+				return err
 			}
 			n, err := file.Write(data.Chunk)
 			if err != nil {
-				return status.Errorf(codes.Internal, "Write error: %v", err)
+				err = status.Errorf(codes.Internal, "Write error: %v", err)
+				klog.Warningf("FileServer: Failed to write chunk to temp file for volume %s. Duration: %s, Error: %v", volumeID, time.Since(startTime), err)
+				return err
 			}
 			fileSize += uint64(n)
 		}
