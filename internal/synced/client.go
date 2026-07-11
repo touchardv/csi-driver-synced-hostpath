@@ -86,7 +86,10 @@ func ClientDownload(ctx context.Context, addr string, volumeID string, destDir s
 			}
 
 			// Stream the content from the tar reader to the file
-			if _, err := io.Copy(f, tr); err != nil {
+			buf := bufferPool.Get().([]byte)
+			_, err = io.CopyBuffer(f, tr, buf)
+			bufferPool.Put(buf)
+			if err != nil {
 				f.Close()
 				klog.Warningf("Client: Failed to extract file %s for volume %s. Duration: %s, Error: %v", target, volumeID, time.Since(startTime), err)
 				return err

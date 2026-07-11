@@ -84,6 +84,10 @@ test: $(GENERATED_SOURCES)
 run: $(BUILD_DIR)/$(BINARY)
 	$(BUILD_DIR)/$(BINARY) -v=4 --nodeid=local --socket-path=/tmp/csi.sock --state-dir=/tmp/state --enable-file-server
 
+.PHONY: run-e2e-test
+run-e2e-test:
+	deployment/test/run-test.sh
+
 .PHONY: uninstall
 uninstall:
 	helm uninstall --ignore-not-found dev-csi-synced-hostpath

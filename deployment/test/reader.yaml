@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: csi-test-reader
+spec:
+  template:
+    metadata:
+      labels:
+        test-role: reader
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: test-role
+                    operator: In
+                    values:
+                      - writer
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - command: ["sh", "-c", "cd /data && sha256sum -c test.sha256 && cat test.txt"]
+          image: alpine
+          name: reader
+          volumeMounts:
+            - mountPath: /data
+              name: test-volume
+      restartPolicy: Never
+      volumes:
+        - name: test-volume
+          persistentVolumeClaim:
+            claimName: csi-integration-test-pvc

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/pborman/uuid"
 	"k8s.io/klog/v2"
@@ -55,6 +56,12 @@ func createEmptyArchive(dir string, volumeID string) error {
 	return nil
 }
 
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return make([]byte, 32*1024)
+	},
+}
+
 func createArchive(dir string, w io.Writer) error {
 	klog.V(4).Info("Creating archive of: ", dir)
 	writer := tar.NewWriter(w)
@@ -94,7 +101,10 @@ func createArchive(dir string, w io.Writer) error {
 		}
 		defer file.Close()
 
-		_, err = io.Copy(writer, file)
+		buf := bufferPool.Get().([]byte)
+		defer bufferPool.Put(buf)
+
+		_, err = io.CopyBuffer(writer, file, buf)
 		return err
 	})
 }

@@ -1,6 +1,14 @@
 controller:
+  gomemlimit: "180MiB"
   livenessProbe:
     port: 27301
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
 driver:
   name: syncedhostpath.csi.k8s.io
 fileServer:
@@ -11,8 +19,16 @@ logLevel: 2
 networkPolicy:
   enabled: true
 node:
+  gomemlimit: "180MiB"
   livenessProbe:
     port: 27302
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
 pod:
   image: quay.io/touchardv/csi-driver-synced-hostpath
 serviceAccountName: csi-synced-hostpath-controller-sa

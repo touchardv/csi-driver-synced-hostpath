@@ -78,6 +78,8 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: /csi/csi.sock
+            - name: GOMEMLIMIT
+              value: {{ .Values.controller.gomemlimit | quote }}
           image: {{ .Values.pod.image }}:v{{ .Chart.AppVersion }}
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -92,11 +94,7 @@ spec:
             timeoutSeconds: 10
           name: csi-controller
           resources:
-            limits:
-              memory: 200Mi
-            requests:
-              cpu: 10m
-              memory: 20Mi
+            {{- toYaml .Values.controller.resources | nindent 12 }}
           securityContext:
             capabilities:
               drop:

@@ -78,6 +78,8 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: /csi/csi.sock
+            - name: GOMEMLIMIT
+              value: {{ .Values.node.gomemlimit | quote }}
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -97,11 +99,7 @@ spec:
             timeoutSeconds: 10
           name: csi-node
           resources:
-            limits:
-              memory: 200Mi
-            requests:
-              cpu: 10m
-              memory: 20Mi
+            {{- toYaml .Values.node.resources | nindent 12 }}
           securityContext:
             capabilities:
               drop:
