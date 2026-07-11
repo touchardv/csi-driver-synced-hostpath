@@ -21,7 +21,14 @@ spec:
         test-role: writer
     spec:
       containers:
-        - command: ["sh", "-c", "echo 'CSI_INTEGRATION_TEST_PASSED' > /data/test.txt && sha256sum /data/test.txt > /data/test.sha256 && echo 'Data written successfully'"]
+        - command:
+            - sh
+            - -c
+            - |
+              echo 'CSI_INTEGRATION_TEST_PASSED' > /data/test.txt
+              dd if=/dev/zero of=/data/large.bin bs=1M count=500
+              sha256sum /data/test.txt /data/large.bin > /data/test.sha256
+              echo 'Data written successfully'
           image: alpine
           name: writer
           volumeMounts:
