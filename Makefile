@@ -45,7 +45,7 @@ clean:
 
 .PHONY: install
 install: $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz
-	helm upgrade dev-csi-synced-hostpath $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz --install --set logLevel=4
+	helm upgrade dev-csi-synced-hostpath $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz --install --set logLevel=4 --set pod.imagePullPolicy=Always
 
 internal/synced/file.pb.go: proto/file.proto
 	protoc --go_out=internal proto/file.proto

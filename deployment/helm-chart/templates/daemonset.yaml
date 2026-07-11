@@ -86,7 +86,7 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
           image: {{ .Values.pod.image }}:v{{ .Chart.AppVersion }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.pod.imagePullPolicy }}
           livenessProbe:
             failureThreshold: 5
             httpGet:

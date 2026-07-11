@@ -81,7 +81,7 @@ spec:
             - name: GOMEMLIMIT
               value: {{ .Values.controller.gomemlimit | quote }}
           image: {{ .Values.pod.image }}:v{{ .Chart.AppVersion }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ .Values.pod.imagePullPolicy }}
           livenessProbe:
             failureThreshold: 5
             httpGet:

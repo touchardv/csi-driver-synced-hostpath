@@ -31,6 +31,7 @@ node:
       memory: 20Mi
 pod:
   image: quay.io/touchardv/csi-driver-synced-hostpath
+  imagePullPolicy: IfNotPresent
 serviceAccountName: csi-synced-hostpath-controller-sa
 state:
   claimName: csi-synced-hostpath
