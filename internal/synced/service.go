@@ -26,6 +26,10 @@ type Service interface {
 	// If found then returns the volume info and true.
 	GetVolumeByName(name string) (Volume, bool)
 
+	ControllerPublishVolume(id string, nodeID string) error
+
+	ControllerUnpublishVolume(id string) error
+
 	StageVolume(ctx context.Context, id string, stagingTargetPath string) error
 
 	PublishVolume(id string, stagingTargetPath string, targetPath string, readOnly bool) error
@@ -156,6 +160,40 @@ func (s *service) GetVolumeByName(name string) (Volume, bool) {
 		}
 	}
 	return Volume{}, false
+}
+
+func (s *service) ControllerPublishVolume(id string, nodeID string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	v, found := s.volumes[id]
+	if !found {
+		return errors.New("volume not found")
+	}
+
+	if v.Published && v.PublishedNode != nodeID {
+		return fmt.Errorf("volume already attached to node: %s", v.PublishedNode)
+	}
+
+	v.Published = true
+	v.PublishedNode = nodeID
+	s.volumes[id] = v
+	return s.save()
+}
+
+func (s *service) ControllerUnpublishVolume(id string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	v, found := s.volumes[id]
+	if !found {
+		return nil
+	}
+
+	v.Published = false
+	v.PublishedNode = ""
+	s.volumes[id] = v
+	return s.save()
 }
 
 func (s *service) StageVolume(ctx context.Context, id string, stagingTargetPath string) error {

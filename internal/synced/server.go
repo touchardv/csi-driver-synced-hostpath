@@ -29,7 +29,12 @@ type FileServer interface {
 func NewFileServer(tempDir string) FileServer {
 	ensureExistLocalDir(tempDir)
 	return &fileServer{
-		grpcServer: grpc.NewServer(),
+		grpcServer: grpc.NewServer(
+			grpc.InitialWindowSize(32*1024*1024),
+			grpc.InitialConnWindowSize(32*1024*1024),
+			grpc.MaxRecvMsgSize(64*1024*1024),
+			grpc.MaxSendMsgSize(64*1024*1024),
+		),
 		tempDir:    tempDir,
 	}
 }
@@ -66,6 +71,7 @@ func (s *fileServer) Stop() {
 func (s *fileServer) Download(req *DownloadRequest, stream FileService_DownloadServer) error {
 	klog.V(2).Infof("FileServer: Download starting for volume %s", req.VolumeID)
 	startTime := time.Now()
+
 	path, err := s.handler.Resolve(req.VolumeID)
 	if err != nil {
 		klog.Warningf("FileServer: Failed to resolve volume %s. Duration: %s, Error: %v", req.VolumeID, time.Since(startTime), err)
@@ -80,7 +86,7 @@ func (s *fileServer) Download(req *DownloadRequest, stream FileService_DownloadS
 
 	klog.V(4).Infof("Downloading from file=%s", path)
 	var bytesSent int64
-	buf := make([]byte, 64*1024)
+	buf := make([]byte, 1024*1024)
 	for {
 		n, err := file.Read(buf)
 		if err == io.EOF {
@@ -97,7 +103,7 @@ func (s *fileServer) Download(req *DownloadRequest, stream FileService_DownloadS
 		bytesSent += int64(n)
 	}
 	duration := time.Since(startTime)
-	klog.V(2).Infof("FileServer: Downloaded volume %s successfully. Size: %d bytes, Duration: %s", req.VolumeID, bytesSent, duration)
+	klog.V(2).Infof("FileServer: Downloaded volume %s successfully. Size: %s, Duration: %s", req.VolumeID, formatBytes(uint64(bytesSent)), duration)
 	return nil
 }
 
@@ -108,6 +114,7 @@ func (s *fileServer) Upload(stream FileService_UploadServer) error {
 	var file *os.File
 	var volumeID string
 	var fileSize uint64
+
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
@@ -119,7 +126,7 @@ func (s *fileServer) Upload(stream FileService_UploadServer) error {
 				}
 			}
 			duration := time.Since(startTime)
-			klog.V(2).Infof("FileServer: Uploaded volume %s successfully. Size: %d bytes, Duration: %s", volumeID, fileSize, duration)
+			klog.V(2).Infof("FileServer: Uploaded volume %s successfully. Size: %s, Duration: %s", volumeID, formatBytes(fileSize), duration)
 			return stream.SendAndClose(&UploadResponse{
 				Message:   fmt.Sprintf("Saved %s", volumeID),
 				SizeBytes: fileSize,
@@ -138,6 +145,7 @@ func (s *fileServer) Upload(stream FileService_UploadServer) error {
 				return err
 			}
 			volumeID = req.GetVolumeID()
+
 			file, err = os.CreateTemp(s.tempDir, "upload-")
 			if err != nil {
 				err = status.Errorf(codes.Internal, "Cannot create temporary file: %v", err)

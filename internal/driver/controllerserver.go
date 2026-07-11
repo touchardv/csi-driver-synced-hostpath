@@ -21,6 +21,13 @@ func (n *SyncedHostPathDriver) ControllerGetCapabilities(ctx context.Context, re
 					},
 				},
 			},
+			{
+				Type: &csi.ControllerServiceCapability_Rpc{
+					Rpc: &csi.ControllerServiceCapability_RPC{
+						Type: csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
+					},
+				},
+			},
 		},
 	}, nil
 }
@@ -145,4 +152,50 @@ func (n *SyncedHostPathDriver) ValidateVolumeCapabilities(ctx context.Context, r
 			Parameters:         req.GetParameters(),
 		},
 	}, nil
+}
+
+func (n *SyncedHostPathDriver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
+	klog.V(4).Info("Controller: PublishVolume called")
+	volumeID := req.GetVolumeId()
+	if len(volumeID) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "missing volume id")
+	}
+	nodeID := req.GetNodeId()
+	if len(nodeID) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "missing node id")
+	}
+	volumeCapability := req.GetVolumeCapability()
+	if volumeCapability == nil {
+		return nil, status.Error(codes.InvalidArgument, "missing volume capability")
+	}
+
+	if n.nodeID != "" && nodeID != n.nodeID {
+		return nil, status.Errorf(codes.NotFound, "node %s not found", nodeID)
+	}
+
+	if err := n.svc.ControllerPublishVolume(volumeID, nodeID); err != nil {
+		if err.Error() == "volume not found" {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	return &csi.ControllerPublishVolumeResponse{}, nil
+}
+
+func (n *SyncedHostPathDriver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
+	klog.V(4).Info("Controller: UnpublishVolume called")
+	volumeID := req.GetVolumeId()
+	if len(volumeID) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "missing volume id")
+	}
+
+	if err := n.svc.ControllerUnpublishVolume(volumeID); err != nil {
+		if err.Error() == "volume not found" {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }

@@ -2,6 +2,7 @@ package synced
 
 import (
 	"archive/tar"
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -39,7 +40,16 @@ func (r *streamReader) Read(p []byte) (n int, err error) {
 func ClientDownload(ctx context.Context, addr string, volumeID string, destDir string) error {
 	klog.V(2).Infof("Client: Downloading volume %s starting", volumeID)
 	startTime := time.Now()
-	conn, _ := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, _ := grpc.NewClient(
+		addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithInitialWindowSize(32*1024*1024),
+		grpc.WithInitialConnWindowSize(32*1024*1024),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(64*1024*1024),
+			grpc.MaxCallSendMsgSize(64*1024*1024),
+		),
+	)
 	defer conn.Close()
 	client := NewFileServiceClient(conn)
 	downStream, err := client.Download(ctx, &DownloadRequest{VolumeID: volumeID})
@@ -103,14 +113,23 @@ func ClientDownload(ctx context.Context, addr string, volumeID string, destDir s
 		}
 	}
 	duration := time.Since(startTime)
-	klog.V(2).Infof("Client: Downloaded volume %s successfully. Size: %d bytes, Duration: %s", volumeID, reader.bytesRead, duration)
+	klog.V(2).Infof("Client: Downloaded volume %s successfully. Size: %s, Duration: %s", volumeID, formatBytes(uint64(reader.bytesRead)), duration)
 	return nil
 }
 
 func ClientUpload(addr string, volumeDir string, volumeID string) error {
 	klog.V(2).Infof("Client: Uploading volume %s starting", volumeID)
 	startTime := time.Now()
-	conn, _ := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, _ := grpc.NewClient(
+		addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithInitialWindowSize(32*1024*1024),
+		grpc.WithInitialConnWindowSize(32*1024*1024),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(64*1024*1024),
+			grpc.MaxCallSendMsgSize(64*1024*1024),
+		),
+	)
 	defer conn.Close()
 	client := NewFileServiceClient(conn)
 
@@ -136,9 +155,10 @@ func ClientUpload(addr string, volumeDir string, volumeID string) error {
 		return err
 	}
 
-	buf := make([]byte, 64*1024) // 64KB chunks
+	br := bufio.NewReaderSize(reader, 1024*1024)
+	buf := make([]byte, 1024*1024) // 1MB chunks
 	for {
-		n, err := reader.Read(buf)
+		n, err := br.Read(buf)
 		if err == io.EOF {
 			break
 		}
@@ -163,6 +183,6 @@ func ClientUpload(addr string, volumeDir string, volumeID string) error {
 	}
 
 	duration := time.Since(startTime)
-	klog.V(2).Infof("Client: Uploaded volume %s successfully. Size: %d bytes, Duration: %s", volumeID, res.SizeBytes, duration)
+	klog.V(2).Infof("Client: Uploaded volume %s successfully. Size: %s, Duration: %s", volumeID, formatBytes(res.SizeBytes), duration)
 	return nil
 }

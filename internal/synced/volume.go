@@ -2,6 +2,7 @@ package synced
 
 import (
 	"archive/tar"
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -13,12 +14,13 @@ import (
 )
 
 type Volume struct {
-	Capacity   int64
-	ID         string
-	Name       string
-	Published  bool
-	Staged     bool
-	StagedPath string
+	Capacity      int64
+	ID            string
+	Name          string
+	Published     bool
+	PublishedNode string
+	Staged        bool
+	StagedPath    string
 }
 
 func archiveFile(dir string, volumeID string) string {
@@ -58,14 +60,16 @@ func createEmptyArchive(dir string, volumeID string) error {
 
 var bufferPool = sync.Pool{
 	New: func() interface{} {
-		return make([]byte, 32*1024)
+		return make([]byte, 256*1024)
 	},
 }
 
 func createArchive(dir string, w io.Writer) error {
 	klog.V(4).Info("Creating archive of: ", dir)
-	writer := tar.NewWriter(w)
+	bw := bufio.NewWriterSize(w, 1024*1024)
+	writer := tar.NewWriter(bw)
 	defer writer.Close()
+	defer bw.Flush()
 
 	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
