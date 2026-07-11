@@ -19,6 +19,7 @@ const (
 
 var (
 	VendorVersion = "v0.0.1"
+	BuildTime     = "unknown"
 )
 
 // SyncedHostPathDriver implements the three required CSI services.
@@ -47,7 +48,7 @@ func NewSyncedHostPathDriver(nodeID string, stateDir string, enableFileServer bo
 }
 
 func (n *SyncedHostPathDriver) Run(ctx context.Context, socketPath string) error {
-	klog.Info("Running driver version ", VendorVersion)
+	klog.Infof("Running driver version %s (built %s)", VendorVersion, BuildTime)
 	if n.fileServer != nil {
 		if err := n.fileServer.Run(n.svc); err != nil {
 			return fmt.Errorf("failed to start file server: %w", err)

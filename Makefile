@@ -3,7 +3,8 @@ BUILD_DIR := $(shell pwd)/build
 CHART_NAME := $(shell grep 'name:' deployment/helm-chart/Chart.yaml | awk '{print $$2}')
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.1")
 SEMVER := $(shell echo $(VERSION) | sed 's/^v//')
-LD_ARGS ?= -ldflags "-X github.com/touchardv/csi-driver-synced-hostpath/internal/driver.VendorVersion=$(VERSION)"
+BUILD_TIME ?= $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
+LD_ARGS ?= -ldflags "-X github.com/touchardv/csi-driver-synced-hostpath/internal/driver.VendorVersion=$(VERSION) -X github.com/touchardv/csi-driver-synced-hostpath/internal/driver.BuildTime=$(BUILD_TIME)"
 IMAGE := quay.io/touchardv/csi-driver-synced-hostpath
 GENERATED_SOURCES := internal/synced/file.pb.go internal/synced/file_grpc.pb.go
 GOARCH := $(shell go env GOARCH)
@@ -44,7 +45,7 @@ clean:
 
 .PHONY: install
 install: $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz
-	helm upgrade dev-csi-synced-hostpath $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz --install
+	helm upgrade dev-csi-synced-hostpath $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz --install --set logLevel=4
 
 internal/synced/file.pb.go: proto/file.proto
 	protoc --go_out=internal proto/file.proto
@@ -64,6 +65,7 @@ package-helm-chart: $(BUILD_DIR)/$(CHART_NAME)-$(SEMVER).tgz
 .PHONY: package-image
 package-image: $(BINARY)-linux-$(GOARCH)
 	docker buildx build --progress plain \
+		--no-cache \
 		--platform $(DOCKER_BUILDX_PLATFORM) \
 		--tag $(IMAGE):v$(SEMVER) --load -f deployment/Dockerfile .
 
