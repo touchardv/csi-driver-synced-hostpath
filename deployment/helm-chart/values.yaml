@@ -8,6 +8,8 @@ fileServer:
     name: csi-synced-hostpath-fileserver
     port: 50051
 logLevel: 2
+networkPolicy:
+  enabled: true
 node:
   livenessProbe:
     port: 27302

@@ -17,7 +17,7 @@ spec:
         - args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
-            - --http-endpoint=localhost:{{ .Values.node.livenessProbe.port }}
+            - --http-endpoint=:{{ .Values.node.livenessProbe.port }}
             - --v=2
           image: registry.k8s.io/sig-storage/livenessprobe:v2.17.0
           imagePullPolicy: IfNotPresent
@@ -88,7 +88,6 @@ spec:
           livenessProbe:
             failureThreshold: 5
             httpGet:
-              host: localhost
               path: /healthz
               port: {{ .Values.node.livenessProbe.port }}
               scheme: HTTP
@@ -118,8 +117,8 @@ spec:
               name: mountpoint-dir
             - mountPath: /state
               name: state-dir
-      dnsPolicy: ClusterFirstWithHostNet
-      hostNetwork: true
+      dnsPolicy: ClusterFirst
+      hostNetwork: false
       priorityClassName: system-cluster-critical
       restartPolicy: Always
       schedulerName: default-scheduler
