@@ -18,10 +18,3 @@ func TestCreateVolume(t *testing.T) {
 	assert.FileExists(t, filepath.Join(dir, v.ID, "archive.tar"))
 }
 
-func TestNewStagedVolume(t *testing.T) {
-	v := newStagedVolume("some-id", "/staged/path")
-	assert.NotNil(t, v)
-	assert.Equal(t, "some-id", v.ID)
-	assert.True(t, v.Staged)
-	assert.Equal(t, "/staged/path", v.StagedPath)
-}

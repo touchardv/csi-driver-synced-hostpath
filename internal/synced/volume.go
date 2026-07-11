@@ -109,10 +109,3 @@ func createArchive(dir string, w io.Writer) error {
 	})
 }
 
-func newStagedVolume(id string, stagedPath string) *Volume {
-	return &Volume{
-		ID:         id,
-		Staged:     true,
-		StagedPath: stagedPath,
-	}
-}

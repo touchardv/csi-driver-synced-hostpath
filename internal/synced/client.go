@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	grpc "google.golang.org/grpc"
@@ -61,6 +62,10 @@ func ClientDownload(ctx context.Context, addr string, volumeID string, destDir s
 
 		// Determine the target path safely
 		target := filepath.Join(destDir, header.Name)
+		rel, err := filepath.Rel(destDir, target)
+		if err != nil || strings.HasPrefix(rel, "..") {
+			return fmt.Errorf("illegal file path in tar archive: %s", header.Name)
+		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:

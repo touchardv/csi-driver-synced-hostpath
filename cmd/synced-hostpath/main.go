@@ -26,7 +26,9 @@ func main() {
 	ctx, stopFunc := context.WithCancel(context.Background())
 	flag.Parse()
 	driver := driver.NewSyncedHostPathDriver(*nodeID, *stateDir, *enableFileServer, *fileServerAddr)
-	driver.Run(ctx, *socketPath)
+	if err := driver.Run(ctx, *socketPath); err != nil {
+		klog.Fatalf("Failed to run driver: %v", err)
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)

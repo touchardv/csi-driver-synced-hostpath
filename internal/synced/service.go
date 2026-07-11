@@ -136,6 +136,9 @@ func (s *service) DeleteVolume(volumeID string) error {
 }
 
 func (s *service) GetVolumeByID(id string) (Volume, bool) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	v, found := s.volumes[id]
 	if found {
 		return *v, true
@@ -144,6 +147,9 @@ func (s *service) GetVolumeByID(id string) (Volume, bool) {
 }
 
 func (s *service) GetVolumeByName(name string) (Volume, bool) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	for _, v := range s.volumes {
 		if v.Name == name {
 			return *v, true
@@ -159,7 +165,13 @@ func (s *service) StageVolume(ctx context.Context, id string, stagingTargetPath 
 	}
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.volumes[id] = newStagedVolume(id, stagingTargetPath)
+	v, found := s.volumes[id]
+	if !found {
+		v = &Volume{ID: id}
+		s.volumes[id] = v
+	}
+	v.Staged = true
+	v.StagedPath = stagingTargetPath
 	return s.save()
 }
 

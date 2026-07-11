@@ -2,6 +2,7 @@ package driver
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -45,21 +46,21 @@ func NewSyncedHostPathDriver(nodeID string, stateDir string, enableFileServer bo
 	}
 }
 
-func (n *SyncedHostPathDriver) Run(ctx context.Context, socketPath string) {
+func (n *SyncedHostPathDriver) Run(ctx context.Context, socketPath string) error {
 	klog.Info("Running driver version ", VendorVersion)
 	if n.fileServer != nil {
 		if err := n.fileServer.Run(n.svc); err != nil {
-			klog.Fatalf("failed to start file server: %v", err)
+			return fmt.Errorf("failed to start file server: %w", err)
 		}
 	}
 
 	if err := os.Remove(socketPath); err != nil && !os.IsNotExist(err) {
-		klog.Fatalf("failed to remove %s: %v", socketPath, err)
+		return fmt.Errorf("failed to remove %s: %w", socketPath, err)
 	}
 
 	csiListener, err := net.Listen("unix", socketPath)
 	if err != nil {
-		klog.Fatalf("failed to listen on socket %s: %v", socketPath, err)
+		return fmt.Errorf("failed to listen on socket %s: %w", socketPath, err)
 	}
 	klog.Infof("Listening on %s", csiListener.Addr().String())
 
@@ -73,6 +74,7 @@ func (n *SyncedHostPathDriver) Run(ctx context.Context, socketPath string) {
 			klog.Fatalf("failed to serve: %v", err)
 		}
 	}()
+	return nil
 }
 
 func (n *SyncedHostPathDriver) Stop() {
