@@ -93,7 +93,7 @@ func (s *service) Save(volumeID string, file string) error {
 	if v, found := s.volumes[volumeID]; found {
 		return copyFile(file, archiveFile(s.stateDir, v.ID))
 	}
-	return errors.New("volume not found")
+	return nil
 }
 
 func (s *service) Stop() error {

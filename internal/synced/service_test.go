@@ -108,3 +108,32 @@ func TestStageUnstage(t *testing.T) {
 	err = svc.UnstageVolume(id, stagingPath)
 	assert.Nil(t, err)
 }
+
+func TestSave(t *testing.T) {
+	stateDir, _ := os.MkdirTemp("", "service_test")
+	defer os.RemoveAll(stateDir)
+	svc := NewService(stateDir, "localhost:50051")
+
+	// Test 1: Save when volume is not found
+	err := svc.Save("non-existent", "some-file")
+	assert.Nil(t, err)
+
+	// Test 2: Save when volume is found
+	id, err := svc.CreateVolume("myvolume", 12340)
+	assert.Nil(t, err)
+
+	// Create a dummy file to copy
+	dummyFile := filepath.Join(stateDir, "dummy")
+	err = os.WriteFile(dummyFile, []byte("hello"), 0644)
+	assert.Nil(t, err)
+
+	err = svc.Save(id, dummyFile)
+	assert.Nil(t, err)
+
+	// Verify that the file was copied to the state archive
+	archivePath := filepath.Join(stateDir, id, "archive.tar")
+	assert.FileExists(t, archivePath)
+	content, err := os.ReadFile(archivePath)
+	assert.Nil(t, err)
+	assert.Equal(t, []byte("hello"), content)
+}
