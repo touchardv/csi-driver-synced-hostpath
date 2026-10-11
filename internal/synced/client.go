@@ -155,7 +155,7 @@ func ClientUpload(addr string, volumeDir string, volumeID string) error {
 		return err
 	}
 
-	br := bufio.NewReaderSize(reader, 1024*1024)
+	br := bufio.NewReaderSize(reader, 4*1024*1024)
 	buf := make([]byte, 1024*1024) // 1MB chunks
 	for {
 		n, err := br.Read(buf)

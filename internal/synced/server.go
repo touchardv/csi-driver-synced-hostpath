@@ -26,8 +26,16 @@ type FileServer interface {
 	Stop()
 }
 
-func NewFileServer(tempDir string) FileServer {
+func NewFileServer(tempDir string, addr ...string) FileServer {
 	ensureExistLocalDir(tempDir)
+	listenAddr := "0.0.0.0:50051"
+	if len(addr) > 0 && addr[0] != "" {
+		if _, port, err := net.SplitHostPort(addr[0]); err == nil {
+			listenAddr = net.JoinHostPort("0.0.0.0", port)
+		} else {
+			listenAddr = addr[0]
+		}
+	}
 	return &fileServer{
 		grpcServer: grpc.NewServer(
 			grpc.InitialWindowSize(32*1024*1024),
@@ -36,6 +44,7 @@ func NewFileServer(tempDir string) FileServer {
 			grpc.MaxSendMsgSize(64*1024*1024),
 		),
 		tempDir:    tempDir,
+		listenAddr: listenAddr,
 	}
 }
 
@@ -45,20 +54,21 @@ type fileServer struct {
 	grpcServer *grpc.Server
 	handler    FileHandler
 	tempDir    string
+	listenAddr string
 }
 
 func (s *fileServer) Run(handler FileHandler) error {
 	s.handler = handler
-	listener, err := net.Listen("tcp", "0.0.0.0:50051")
+	listener, err := net.Listen("tcp", s.listenAddr)
 	if err != nil {
-		klog.Fatalf("failed to listen on socket %s: %v", "0.0.0.0:50051", err.Error())
+		return fmt.Errorf("failed to listen on socket %s: %w", s.listenAddr, err)
 	}
 	klog.Infof("Listening on %s", listener.Addr().String())
 
 	RegisterFileServiceServer(s.grpcServer, s)
 	go func() {
 		if err := s.grpcServer.Serve(listener); err != nil {
-			klog.Fatalf("failed to serve: %v", err)
+			klog.Errorf("failed to serve: %v", err)
 		}
 	}()
 	return nil

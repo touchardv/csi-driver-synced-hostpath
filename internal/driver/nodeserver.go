@@ -53,6 +53,9 @@ func (n *SyncedHostPathDriver) NodeStageVolume(ctx context.Context, req *csi.Nod
 		return nil, status.Error(codes.InvalidArgument, "missing volume capabilities")
 	}
 
+	n.volumeLocks.LockKey(volumeID)
+	defer n.volumeLocks.UnlockKey(volumeID)
+
 	if v, found := n.svc.GetVolumeByID(volumeID); found {
 		if v.Staged {
 			if v.StagedPath == stagingTargetPath {
@@ -149,12 +152,11 @@ func (n *SyncedHostPathDriver) NodeUnstageVolume(_ context.Context, req *csi.Nod
 		return nil, status.Error(codes.InvalidArgument, "missing staging target path")
 	}
 
-	v, found := n.svc.GetVolumeByID(volumeID)
-	if !found {
-		return nil, status.Error(codes.NotFound, "volume not found")
-	}
+	n.volumeLocks.LockKey(volumeID)
+	defer n.volumeLocks.UnlockKey(volumeID)
 
-	if !v.Staged {
+	v, found := n.svc.GetVolumeByID(volumeID)
+	if !found || !v.Staged {
 		// idempotency
 		return &csi.NodeUnstageVolumeResponse{}, nil
 	}

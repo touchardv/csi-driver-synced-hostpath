@@ -14,7 +14,7 @@ func TestDriver(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	ctx := context.Background()
-	d := NewSyncedHostPathDriver("nodeID", filepath.Join(dir, "state"), true, "localhost:50051")
+	d := NewSyncedHostPathDriver("nodeID", filepath.Join(dir, "state"), true, "localhost:50052")
 	go func() {
 		if err := d.Run(ctx, "/tmp/csi.sock"); err != nil {
 			t.Errorf("Failed to run driver: %v", err)

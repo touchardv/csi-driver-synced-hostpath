@@ -91,7 +91,14 @@ func (s *service) Save(volumeID string, file string) error {
 	defer s.mutex.Unlock()
 
 	if v, found := s.volumes[volumeID]; found {
-		return copyFile(file, archiveFile(s.stateDir, v.ID))
+		dest := archiveFile(s.stateDir, v.ID)
+		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+			return fmt.Errorf("failed to create destination dir: %w", err)
+		}
+		if err := os.Rename(file, dest); err == nil {
+			return nil
+		}
+		return copyFile(file, dest)
 	}
 	return nil
 }

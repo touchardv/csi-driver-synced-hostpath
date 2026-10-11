@@ -66,12 +66,17 @@ var bufferPool = sync.Pool{
 
 func createArchive(dir string, w io.Writer) error {
 	klog.V(4).Info("Creating archive of: ", dir)
-	bw := bufio.NewWriterSize(w, 1024*1024)
+	bw := bufio.NewWriterSize(w, 4*1024*1024)
 	writer := tar.NewWriter(bw)
 	defer writer.Close()
 	defer bw.Flush()
 
-	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	return filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		info, err := d.Info()
 		if err != nil {
 			return err
 		}
@@ -94,7 +99,7 @@ func createArchive(dir string, w io.Writer) error {
 		}
 
 		// If it's a directory, we just write the header and move on
-		if info.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
 
@@ -103,12 +108,11 @@ func createArchive(dir string, w io.Writer) error {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
 
 		buf := bufferPool.Get().([]byte)
-		defer bufferPool.Put(buf)
-
 		_, err = io.CopyBuffer(writer, file, buf)
+		bufferPool.Put(buf)
+		file.Close()
 		return err
 	})
 }

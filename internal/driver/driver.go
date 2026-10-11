@@ -11,6 +11,7 @@ import (
 	"github.com/touchardv/csi-driver-synced-hostpath/internal/synced"
 	"google.golang.org/grpc"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/keymutex"
 )
 
 const (
@@ -28,22 +29,24 @@ type SyncedHostPathDriver struct {
 	csi.UnimplementedControllerServer
 	csi.UnimplementedNodeServer
 
-	nodeID     string
-	svc        synced.Service
-	csiServer  *grpc.Server
-	fileServer synced.FileServer
+	nodeID      string
+	svc         synced.Service
+	csiServer   *grpc.Server
+	fileServer  synced.FileServer
+	volumeLocks keymutex.KeyMutex
 }
 
 func NewSyncedHostPathDriver(nodeID string, stateDir string, enableFileServer bool, fileServerAddr string) *SyncedHostPathDriver {
 	var fileServer synced.FileServer
 	if enableFileServer {
-		fileServer = synced.NewFileServer(filepath.Join(stateDir, "uploads"))
+		fileServer = synced.NewFileServer(filepath.Join(stateDir, "uploads"), fileServerAddr)
 	}
 	return &SyncedHostPathDriver{
-		nodeID:     nodeID,
-		svc:        synced.NewService(stateDir, fileServerAddr),
-		csiServer:  grpc.NewServer(),
-		fileServer: fileServer,
+		nodeID:      nodeID,
+		svc:         synced.NewService(stateDir, fileServerAddr),
+		csiServer:   grpc.NewServer(),
+		fileServer:  fileServer,
+		volumeLocks: keymutex.NewHashed(0),
 	}
 }
 
