@@ -7,7 +7,7 @@ Disclaimer: the driver is not production-ready. However it should be safe enough
 ## Building
 
 * The `make` command (e.g. [GNU make](https://www.gnu.org/software/make/manual/make.html)).
-* The [Golang toolchain](https://golang.org/doc/install) (version 1.25 or later).
+* The [Golang toolchain](https://golang.org/doc/install) (version 1.27 or later).
 
 In a shell, execute: `make` (or `make build`).
 
