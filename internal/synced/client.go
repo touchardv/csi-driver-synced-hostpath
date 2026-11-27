@@ -84,6 +84,16 @@ func ClientDownload(ctx context.Context, addr string, volumeID string, destDir s
 				klog.Warningf("Client: Failed to create dir %s for volume %s. Duration: %s, Error: %v", target, volumeID, time.Since(startTime), err)
 				return err
 			}
+			// Restore the exact directory mode: MkdirAll doesn't apply it to
+			// existing dirs, and umask would otherwise affect new ones.
+			if err := os.Chmod(target, os.FileMode(header.Mode)); err != nil {
+				klog.Warningf("Client: Failed to chmod dir %s for volume %s. Duration: %s, Error: %v", target, volumeID, time.Since(startTime), err)
+				return err
+			}
+			// Restore directory ownership (best-effort: requires root).
+			if err := os.Lchown(target, header.Uid, header.Gid); err != nil {
+				klog.Warningf("Client: Failed to lchown dir %s for volume %s. Duration: %s, Error: %v", target, volumeID, time.Since(startTime), err)
+			}
 		case tar.TypeReg:
 			// Ensure parent directory exists
 			klog.V(4).Infof("Creating parent directory %s", filepath.Dir(target))
@@ -94,7 +104,7 @@ func ClientDownload(ctx context.Context, addr string, volumeID string, destDir s
 
 			// Create the file
 			klog.V(4).Infof("Creating file %s", target)
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
 			if err != nil {
 				klog.Warningf("Client: Failed to open/create file %s for volume %s. Duration: %s, Error: %v", target, volumeID, time.Since(startTime), err)
 				return err
@@ -110,6 +120,17 @@ func ClientDownload(ctx context.Context, addr string, volumeID string, destDir s
 				return err
 			}
 			f.Close()
+
+			// Restore the exact file mode: OpenFile mode is filtered by umask;
+			// Chmod bypasses it and also handles pre-existing files.
+			if err := os.Chmod(target, os.FileMode(header.Mode)); err != nil {
+				klog.Warningf("Client: Failed to chmod file %s for volume %s. Duration: %s, Error: %v", target, volumeID, time.Since(startTime), err)
+				return err
+			}
+			// Restore file ownership (best-effort: requires root).
+			if err := os.Lchown(target, header.Uid, header.Gid); err != nil {
+				klog.Warningf("Client: Failed to lchown file %s for volume %s. Duration: %s, Error: %v", target, volumeID, time.Since(startTime), err)
+			}
 		}
 	}
 	duration := time.Since(startTime)
